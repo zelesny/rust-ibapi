@@ -96,6 +96,20 @@ fn decode_pnl_proto_works() {
 }
 
 #[test]
+fn decode_pnl_proto_without_daily_pnl() {
+    let proto_msg = crate::proto::PnL {
+        req_id: Some(1),
+        daily_pn_l: None,
+        unrealized_pn_l: Some(500.0),
+        realized_pn_l: None,
+    };
+
+    let result = super::decode_pnl_proto(proto_msg).unwrap();
+    assert_eq!(result.daily_pnl, f64::MAX); // unset, not 0
+    assert_eq!(result.unrealized_pnl, Some(500.0));
+}
+
+#[test]
 fn decode_account_value_proto_works() {
     let proto_msg = crate::proto::AccountValue {
         key: Some("NetLiquidation".into()),
@@ -152,6 +166,22 @@ fn decode_pnl_single_proto_works() {
     assert_eq!(result.daily_pnl, 1000.0);
     assert_eq!(result.unrealized_pnl, 2000.0);
     assert_eq!(result.realized_pnl, 500.0);
+    assert_eq!(result.value, 75000.0);
+}
+
+#[test]
+fn decode_pnl_single_proto_without_daily_pnl() {
+    let proto_msg = crate::proto::PnLSingle {
+        req_id: Some(1),
+        position: Some("500".into()),
+        daily_pn_l: None,
+        unrealized_pn_l: Some(2000.0),
+        realized_pn_l: Some(500.0),
+        value: Some(75000.0),
+    };
+
+    let result = super::decode_pnl_single_proto(proto_msg).unwrap();
+    assert_eq!(result.daily_pnl, f64::MAX); // unset, not 0
     assert_eq!(result.value, 75000.0);
 }
 
