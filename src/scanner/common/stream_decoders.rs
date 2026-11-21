@@ -11,8 +11,10 @@ impl StreamDecoder<Vec<ScannerData>> for Vec<ScannerData> {
 
     fn is_nonterminal_notice(notice: &Notice) -> bool {
         // An empty scanner query can report 165 while its continuous request
-        // remains active. Only ScannerData itself represents a completed batch.
-        notice.code == HMDS_QUERY_MESSAGE_CODE && notice.message.to_ascii_lowercase().contains("no items retrieved")
+        // remains active, and a capped one ("50 out of 2172 items retrieved")
+        // reports it before its data. Only ScannerData itself represents a
+        // completed batch.
+        notice.code == HMDS_QUERY_MESSAGE_CODE && notice.message.to_ascii_lowercase().contains("items retrieved")
     }
 
     fn decode(_context: &DecoderContext, message: &ResponseMessage) -> Result<Vec<ScannerData>, Error> {
@@ -29,7 +31,7 @@ impl StreamDecoder<Vec<ScannerData>> for Vec<ScannerData> {
     /// Live: after 162 TWS answers the cancel with 365 (no scanner subscription).
     /// Verified for "scanner type … is disabled"; the other 162s seen on
     /// scanners (subscription cancelled, pacing) are believed to end it too.
-    /// Not 165: its "no items retrieved" form keeps the scanner alive (#886).
+    /// Not 165: its "items retrieved" forms keep the scanner alive (#886).
     fn rejection_ends_request(notice: &Notice) -> bool {
         notice.code == HMDS_ERROR_CODE
     }

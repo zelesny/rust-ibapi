@@ -45,6 +45,29 @@ async fn scanner165_noitems_keeps_queued_batches() {
 }
 
 #[tokio::test]
+async fn scanner165_capped_is_a_notice_before_its_batch() {
+    let filled = scanner_data()
+        .request_id(TEST_REQ_ID_FIRST)
+        .rows(vec![scanner_data_row(0, NVDA_CONTRACT_ID, "NVDA")])
+        .encode_proto();
+    let message_bus = Arc::new(MessageBusStub::with_ordered_responses(vec![
+        proto_error_response(TEST_REQ_ID_FIRST, HMDS_QUERY_MESSAGE_CODE, CAPPED_MESSAGE),
+        proto_response(IncomingMessages::ScannerData, filled),
+    ]));
+    let client = Client::stubbed(message_bus, server_versions::PROTOBUF_REST_MESSAGES_3);
+    let mut subscription = client.scanner_subscription(&ScannerSubscription::default(), &[]).await.unwrap();
+
+    assert!(
+        matches!(subscription.next().await, Some(Ok(SubscriptionItem::Notice(notice))) if notice.message == CAPPED_MESSAGE),
+        "a capped scan's 165 must not end the stream"
+    );
+    match subscription.next().await {
+        Some(Ok(SubscriptionItem::Data(rows))) => assert_filled_batch(&rows),
+        other => panic!("expected the capped scan's batch, got {other:?}"),
+    }
+}
+
+#[tokio::test]
 async fn scanner165_other_failures_remain_terminal() {
     for &(code, message) in TERMINAL_SCANNER_ERRORS {
         let message_bus = Arc::new(MessageBusStub::with_ordered_responses(error_then_empty_batch(code, message)));

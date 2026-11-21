@@ -10,10 +10,14 @@ use crate::testdata::builders::ResponseProtoEncoder;
 /// The 165 text TWS sends for an empty scanner query (seen live before RTH).
 pub(crate) const NO_ITEMS_MESSAGE: &str = "Historical Market Data Service query message:no items retrieved";
 
+/// The 165 text TWS sends before a scan's data when more rows matched than
+/// it returns (seen live on HIGH_LAST_VS_EMA20, 2026-11-20).
+pub(crate) const CAPPED_MESSAGE: &str = "Historical Market Data Service query message:50 out of 2172 items retrieved";
+
 /// A genuine rejection: still ends the subscription.
 pub(crate) const REJECTION_CODE: i32 = NO_SECURITY_DEFINITION_CODE;
 
-const NVDA_CONTRACT_ID: i32 = 4815747;
+pub(crate) const NVDA_CONTRACT_ID: i32 = 4815747;
 
 /// Errors that must still end a scanner subscription: another 165 text, and a
 /// scanner-specific error.
